@@ -1,64 +1,71 @@
 # Operation Desired State — Scope Interview
 
-These questions are intended to define the program boundary before assigning completion percentages or building cross-repository orchestration.
+These questions define the program boundary before assigning completion percentages or building cross-repository orchestration.
 
-## 1. Starting condition
+## Answered baseline
 
-What is the agreed starting point for a full reconstruction?
+### 1. Starting condition — ANSWERED
 
-Examples:
+For a catastrophic lab loss, the practical starting point is a newly provisioned laptop or management workstation with Internet access, Git access, and access to required external secrets/trust material.
 
-- bare physical hardware with firmware configured
-- installed hypervisors with no VMs
-- existing network appliances reset to factory state
-- minimal management workstation/builder available
-- GitHub and external secret stores available
-- Internet access available
+A documented **seed node** build procedure is critical. The seed node is expected to bootstrap the first Hyper-V system before the normal automation stack exists.
 
-The answer determines what Operation Desired State must itself bootstrap versus what it may treat as a prerequisite.
+Replacement hardware may differ materially from current hardware, so the program should be hardware-agnostic where practical.
 
-## 2. Physical infrastructure boundary
+### 2. Physical infrastructure boundary — ANSWERED
 
-Should the program own desired state for physical infrastructure such as:
+All physical infrastructure is in scope.
 
-- Hyper-V host BIOS/firmware settings
-- Dell server/client firmware
-- Cisco switching
-- NAS configuration
-- UPS/power infrastructure
-- pfSense installation/bootstrap
+This includes physical hosts, pfSense, Cisco networking, NAS/storage infrastructure, and relevant BIOS/firmware state. Automation is preferred where practical, but human-readable documentation describing the current state is also a required recovery artifact.
 
-Or should some of those remain documented prerequisites?
+### 3. Definition of reconstructable — ANSWERED
 
-## 3. Definition of reconstructable
+The preferred outcome is restoration of the lab to the current intended state as closely as practical.
 
-Does "reconstructable" mean:
+Exact hardware duplication is not required. Logical/service identity, configuration, architecture, policy, and functionality should be restored where appropriate.
 
-- produce functionally equivalent infrastructure
-- reproduce exact hostnames, addresses, identities and policy
-- restore application data as well as infrastructure configuration
-- rebuild without restoring full-system backups
+### 4. Data versus infrastructure — PARTIALLY ANSWERED
 
-Which of these is required?
+Platform database-level backups are not considered important simply for reproducing infrastructure configuration. The preferred pattern is to rebuild platforms from desired-state definitions.
 
-## 4. Data versus infrastructure
+Personal/irreplaceable data is explicitly important and requires an N-tier backup strategy.
 
-Where should the program boundary sit between infrastructure state and persistent data?
+Still to define:
 
-Examples:
+- treatment of PKI private keys and trust anchors
+- whether any directory/stateful service data must be restored rather than regenerated
+- what personal-data backup tiers and media/location diversity are required
 
-- AD database
-- IdM directory/KRA/CA data
-- Satellite content and database
-- AAP controller database
-- Zabbix history
-- MECM database/content library
-- user/home data on Synology
-- certificates/private keys
+### 18. Definition of done — ANSWERED
 
-Should recovery of those data sets be part of Operation Desired State, or should the program only rebuild the platform that receives restored data?
+> I will consider Operation Desired State successful when I can restore each individual host and configuration as code and restore the node or device to full functionality.
 
-## 5. Secrets and trust anchors
+Working program interpretation:
+
+> Each in-scope individual host, node, or device and its intended configuration can be reconstructed from code and documented dependencies to full functionality, with configuration convergence validated and no undocumented critical recovery dependency.
+
+## Provisional reconstruction sequence
+
+Current working sequence from catastrophic loss:
+
+1. Provision management laptop/workstation and regain Git/secrets access.
+2. Build the documented seed node.
+3. Use the seed node to image/provision the first Hyper-V node.
+4. Restore foundational network services, including pfSense and switching, as required for stable infrastructure connectivity.
+5. Provision Red Hat IdM.
+6. Provision Red Hat Satellite.
+7. Provision Ansible Automation Platform.
+8. Reprovision Active Directory domain controllers and MECM.
+9. Reconstruct remaining infrastructure, security, management, and workload systems according to dependency order.
+10. Validate full functionality and convergence for each restored node/device.
+
+This order remains provisional until the dependency graph is built. In particular, pfSense, DNS, PKI, AD, and switching may need to occur earlier than the current conceptual sequence.
+
+---
+
+## Remaining interview questions
+
+### 5. Secrets and trust anchors
 
 What external secret/trust systems may be assumed to survive a total rebuild?
 
@@ -72,25 +79,23 @@ Potential examples:
 - external password manager
 - vendor subscription credentials
 
-This is critical because some trust roots cannot be recreated deterministically from ordinary configuration code.
+Which of these are expected to exist outside the lab, and which must Operation Desired State explicitly back up or reconstruct?
 
-## 6. Network bootstrap
+### 6. Network bootstrap
 
-If pfSense and switching were both wiped, which device is expected to come first and how is initial management connectivity established?
+If pfSense and switching were both wiped or replaced, which device is expected to come first and how is initial management connectivity established?
 
-This defines the earliest bootstrap dependency.
+Is there a minimal temporary flat network/bootstrap configuration you would accept before the final VLAN/routing desired state is applied?
 
-## 7. Identity bootstrap
+### 7. Identity bootstrap
 
-For a greenfield reconstruction, which identity system is expected first?
+Your current conceptual sequence places Red Hat IdM before AD during a catastrophic rebuild.
 
-- Active Directory
-- Red Hat IdM
-- independent local/bootstrap credentials
+Is that intentional as the primary infrastructure identity bootstrap, or would local/bootstrap credentials be used until both IdM and AD are available?
 
-How much of later automation is allowed to depend on AD/IdM credentials or Kerberos?
+How much of the seed-node and first-Hyper-V automation should be independent of either directory?
 
-## 8. PKI scope
+### 8. PKI scope
 
 Should Operation Desired State include deterministic deployment/recovery of:
 
@@ -101,9 +106,9 @@ Should Operation Desired State include deterministic deployment/recovery of:
 - enrollment configuration
 - service certificates
 
-Which private keys must be restored rather than regenerated?
+Which private keys must survive and be restored rather than regenerated?
 
-## 9. Platform scope
+### 9. Platform scope
 
 Which major platforms are mandatory for the first formal program scope?
 
@@ -125,13 +130,13 @@ Candidate set:
 - Nessus
 - endpoint/security tooling
 
-## 10. Workload boundary
+### 10. Workload boundary
 
-Should application workloads be considered in scope only when they provide infrastructure/management capabilities, or should every lab workload eventually be reconstructable through this program?
+Should every lab workload eventually be reconstructable, or should Operation Desired State stop at infrastructure/management platforms and treat ordinary workloads as separate projects?
 
-## 11. Endpoint boundary
+### 11. Endpoint boundary
 
-Are user endpoints/workstations part of Operation Desired State, or should the program stop at server and infrastructure platforms?
+Are user endpoints/workstations part of Operation Desired State?
 
 Potential endpoint-related work includes:
 
@@ -139,15 +144,13 @@ Potential endpoint-related work includes:
 - Windows hydration
 - MECM
 - workstation configuration
-- security agent deployment
+- security-agent deployment
 
-## 12. Availability expectation during convergence
+### 12. Availability expectation during convergence
 
-Should routine desired-state enforcement be designed for production-like availability with rolling/one-at-a-time changes, while greenfield rebuild workflows may be more aggressive?
+Should routine desired-state enforcement use production-like one-at-a-time/low-risk changes while greenfield reconstruction may use more aggressive sequencing?
 
-If so, these should be separate operating modes.
-
-## 13. Completion standard
+### 13. Completion standard
 
 For an individual capability, which of these are mandatory before it can be called complete?
 
@@ -164,15 +167,15 @@ For an individual capability, which of these are mandatory before it can be call
 - disaster recovery tested
 - ongoing drift detection implemented
 
-## 14. Manual steps
+### 14. Manual steps
 
-Is the goal literally zero manual steps, or is the target zero **undocumented critical** manual steps with a small, explicit bootstrap procedure allowed?
+Is the target literally zero manual steps, or zero **undocumented critical** manual steps with a small explicit bootstrap procedure allowed?
 
-## 15. Orchestration target
+### 15. Orchestration target
 
-Is the long-term goal a top-level workflow capable of coordinating the entire reconstruction sequence, or is a documented dependency graph plus independently executable repositories sufficient?
+Should the eventual program have one top-level workflow capable of coordinating the reconstruction sequence across repositories, or is a documented dependency graph plus independently executable repos sufficient?
 
-## 16. Test environment
+### 16. Test environment
 
 What can be safely destroyed to prove reconstruction?
 
@@ -184,22 +187,12 @@ Examples:
 - isolated VLAN/lab segment
 - entire lab during a planned exercise
 
-This will determine how aggressively greenfield claims can be validated.
+### 17. Scope horizon
 
-## 17. Scope horizon
-
-Should the first release of Operation Desired State aim for:
+Should the first release target:
 
 - core infrastructure only
 - core infrastructure plus management platforms
 - the entire currently operating lab
 
-A phased scope can still retain the broader long-term vision.
-
-## 18. Definition of done
-
-Complete this sentence:
-
-> I will consider Operation Desired State successful when I can __________.
-
-This answer should become the anchor for the final charter and acceptance criteria.
+A phased scope can retain the broader long-term vision.
