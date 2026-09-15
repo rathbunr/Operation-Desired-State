@@ -6,11 +6,13 @@ Operation Desired State exists to turn the RITCSUSA lab from a collection of suc
 
 The program will coordinate existing domain repositories rather than replace them.
 
+The lab is intentionally a **bleeding-edge learning environment**. Failure is expected. Preserving running systems is not the objective; proving that they can be reconstructed from code, documented intent, and a minimal external control plane is.
+
 ## Secondary objective — Reference Architecture
 
 Operation Desired State also serves as a practical reference-architecture proving ground.
 
-The intent is to demonstrate that a small-scale lab can implement disciplined desired-state engineering across networking, virtualization, identity, lifecycle management, automation, endpoint management, security, compliance, backup, validation, and recovery in a way that is credible enough to inform larger enterprise architecture.
+The intent is to demonstrate that a small-scale lab can implement disciplined desired-state engineering across networking, virtualization, identity, lifecycle management, automation, endpoint management, security, compliance, validation, recovery, and data protection in a way that is credible enough to inform larger enterprise architecture.
 
 The guiding idea is effectively **"if you build it, they will come"**: build and validate the architecture first, then use the working implementation, documentation, dependency model, maturity evidence, and reconstruction exercises as a concrete reference when proposing similar patterns elsewhere.
 
@@ -25,13 +27,13 @@ A successful program should therefore produce artifacts that are useful in two c
 
 The environment already contains substantial automation across networking, virtualization, identity, lifecycle management, endpoint configuration, security tooling, patching, compliance, and operations. However, the end-state definition, cross-platform dependency model, reconstruction sequence, completeness criteria, and evidence required to declare the environment fully desired-state managed are not yet defined as one program.
 
-The central question is therefore not simply:
+The central question is therefore not:
 
-> Is there automation for this platform?
+> Can this system be restored from a backup?
 
 It is:
 
-> Can the intended environment be reconstructed and continuously converged from controlled desired-state sources, with dependencies, validation, recovery, and exceptions explicitly understood?
+> Can the intended environment be reconstructed and continuously converged from controlled desired-state sources, with dependencies, validation, recovery steps, and exceptions explicitly understood?
 
 ## Defined reconstruction starting condition
 
@@ -44,9 +46,9 @@ The human starting point is a newly provisioned Windows workstation/laptop with:
 - access to the authoritative Git repositories
 - access to cloud-hosted personal/critical information such as OneDrive or an equivalent service
 - suitable replacement hardware, which may differ from the original hardware
-- an external drive that can be used for seed/bootstrap media and image staging
+- an external drive that can be used for seed/bootstrap media and image staging if useful
 
-No in-lab password store, platform database, or PKI state is assumed to survive.
+No in-lab password store, platform database, PKI state, VM backup, or system-image backup is assumed to survive.
 
 Operation Desired State must therefore be reasonably hardware-agnostic where practical. Hardware-specific configuration may still exist, but the reconstruction model must distinguish required capabilities from assumptions about exact replacement models.
 
@@ -56,17 +58,17 @@ The initial seed node is the user's Windows workstation/laptop with an external 
 
 This workstation is expected to provide the first recovery control point before normal lab management services exist.
 
-In addition to Git-based desired-state recovery, the program should evaluate maintaining a periodically refreshed **standalone Windows recovery media set** capable of accelerating bootstrap. Candidate seed artifacts include:
+Standalone media or prebuilt images may be maintained as **optional bootstrap accelerators**, not as a system-backup strategy. Candidate seed artifacts could include:
 
-- DC-01 image
-- DC-02 image
-- MECM image
-- Windows Admin Center image
+- DC-01 bootstrap image
+- DC-02 bootstrap image
+- MECM bootstrap image
+- Windows Admin Center bootstrap image
 - a known-good Windows workstation/laptop image
 
-These artifacts are accelerators, not the sole authoritative recovery mechanism. They should be treated as periodically refreshed recovery media, likely on an annual cadence or another defined interval, and tested in isolation sufficiently to establish that they remain bootable and useful.
+If maintained, these artifacts exist only to shorten bootstrap time. They are not authoritative, are not required for recovery success, and must never become a dependency that substitutes for reproducible build/configuration code.
 
-The authoritative long-term configuration source remains version-controlled desired state and documentation, not stale images.
+The authoritative long-term source remains version-controlled desired state and documentation.
 
 ## Provisional greenfield reconstruction sequence
 
@@ -74,14 +76,14 @@ The current working sequence after catastrophic loss is:
 
 1. Provision a Windows management workstation/laptop.
 2. Recover access to Git and cloud-hosted critical information.
-3. Prepare seed/bootstrap media from the workstation and external drive.
+3. Prepare any useful seed/bootstrap media from the workstation and external drive.
 4. Restore or replace foundational network hardware, using like-for-like or better-capability devices where practical.
 5. Reconstitute pfSense and switching sufficiently to establish stable infrastructure networking.
 6. Provision the first Hyper-V host from the seed environment.
 7. Provision Red Hat IdM.
 8. Provision Red Hat Satellite.
 9. Provision Ansible Automation Platform.
-10. Reprovision Active Directory domain controllers, MECM, Windows Admin Center, and remaining Windows infrastructure using the now-available platform stack and/or validated recovery media where advantageous.
+10. Reprovision Active Directory domain controllers, MECM, Windows Admin Center, and remaining Windows infrastructure using desired-state automation and/or optional bootstrap media where advantageous.
 11. Reconstruct remaining infrastructure, management systems, security services, endpoints, and workloads according to documented dependencies.
 12. Restore NAS configuration and data according to the separate backup/data-classification model.
 13. Validate functionality and verify convergence for each restored node/device.
@@ -114,7 +116,7 @@ This includes:
 - physical networking configuration
 - BIOS/UEFI configuration
 - firmware current-state inventory
-- recovery media and bootstrap tooling
+- seed/bootstrap tooling
 - Synology/NAS configuration recovery where technically practical
 
 ### Special case — NAS
@@ -123,10 +125,10 @@ The NAS is not treated like an ordinary disposable compute node because it holds
 
 The desired recovery exercise is:
 
-1. back up NAS configuration and data according to policy;
+1. protect NAS data according to policy;
 2. wipe/reinitialize the NAS;
 3. reconstruct NAS configuration;
-4. restore data;
+4. restore protected data;
 5. validate permissions, shares, identity integration, and service behavior.
 
 NAS data itself must be classified so it is clear which information:
@@ -139,6 +141,7 @@ NAS data itself must be classified so it is clear which information:
 ### Out of scope
 
 - printer recovery as a managed desired-state target
+- traditional system/VM backup as a recovery strategy for lab infrastructure
 - preservation of historical platform databases solely for configuration recovery
 - preservation of existing PKI identity solely for continuity
 
@@ -194,37 +197,50 @@ PKI continuity is **not** a hard recovery requirement. Existing CA identities, c
 
 Where exact restoration is neither useful nor technically reasonable, the program should define the acceptable functional-equivalence boundary explicitly.
 
-## Data, PKI, Git, and backup boundary
+## Data, Git, and backup boundary
 
-Routine restoration of platform databases is **not** a primary objective of Operation Desired State.
+Operation Desired State deliberately separates **rebuildable systems** from **irreplaceable data**.
 
-The preferred model is to rebuild infrastructure platforms from desired state rather than depend on database-level restoration merely to recover configuration.
+### Rebuildable systems
 
-PKI history and continuity are also not considered irreplaceable. A catastrophic rebuild may establish new CA identities and reissue certificates as needed.
+Infrastructure nodes, VMs, operating systems, platform databases, and PKI history are not protected through a traditional backup objective. Their protection mechanism is reproducibility:
 
-Personal and irreplaceable data is different. The program must define an **N-tier backup and recovery strategy for personal/critical data** so that loss of infrastructure does not imply loss of important information.
+- desired-state code;
+- provisioning automation;
+- configuration automation;
+- documented dependencies;
+- tested reconstruction procedures;
+- runtime and functional validation;
+- verified convergence.
 
-The same N-tier concept applies to source code and configuration repositories. GitHub is the primary hosted source, but all important repositories should also be copied to additional storage tiers using a reproducible automation workflow, preferably Ansible.
+A failed or destroyed lab system should normally be rebuilt rather than restored from a system backup.
+
+### Irreplaceable data
+
+Personal and other truly irreplaceable data must use an **N-tier backup and recovery strategy** independent of infrastructure rebuildability.
+
+NAS data must be classified so the program can distinguish:
+
+- irreplaceable data requiring local and offsite copies;
+- source/configuration repositories requiring independent copies;
+- regenerable/downloadable data;
+- transient lab data that may be discarded;
+- data that should not be retained at all.
+
+### Git repositories
+
+GitHub is the primary hosted source for important repositories, but it must not be the only surviving copy.
 
 The program should include or reference Ansible-driven workflows for:
 
 - mirroring/backing up GitHub repositories to one or more secondary local targets;
-- pushing approved backup sets to an offsite/cloud destination;
+- automatically and frequently pushing approved repository/data sets to an offsite/cloud destination;
 - validating backup freshness and recoverability;
 - reporting failures and stale backup tiers.
 
+Tier 4 offsite/cloud protection is explicitly expected to be **automated and frequent**, with cadence determined by the importance and rate of change of the protected data.
+
 Cloud-hosted storage such as OneDrive may serve as one tier, but the program should not treat a single cloud location as the only copy of irreplaceable data.
-
-Data classification for recovery should distinguish at least:
-
-- reproducible infrastructure/configuration state;
-- source repositories requiring N-tier backup;
-- cloud-recoverable credentials and account access;
-- personal/irreplaceable data requiring multi-tier backup;
-- regenerable/downloadable data;
-- data that should not be retained;
-- disposable PKI state that may be regenerated;
-- operational/history data that may be disposable.
 
 ## Orchestration and runbook objective
 
@@ -240,7 +256,7 @@ The target is a tested, version-controlled runbook that:
 6. includes recovery/rollback expectations where relevant;
 7. verifies idempotency/convergence where supported;
 8. can be exercised progressively and periodically;
-9. ultimately demonstrates that every in-scope component can be restored to full functionality, excluding irreplaceable data loss that is handled by the separate backup model.
+9. ultimately demonstrates that every in-scope component can be reconstructed to full functionality, excluding irreplaceable data handled by the separate backup model.
 
 A future top-level orchestrator may automate increasing portions of this flow, but the tested runbook is the minimum authoritative recovery interface.
 
@@ -260,7 +276,7 @@ At minimum, the visualization set should eventually include:
 - catastrophic-recovery/bootstrap sequence;
 - identity/DNS/time/PKI relationships;
 - management/control-plane dependencies;
-- backup/data-flow tiers.
+- protected-data flow and storage tiers.
 
 ## Working objective
 
@@ -275,12 +291,15 @@ Create an evidence-based program model that can answer:
 7. What is required to reconstruct the environment from a defined starting condition?
 8. What criteria must be met before Operation Desired State can be declared complete?
 9. Which architecture patterns are sufficiently validated to serve as a reference model beyond the lab?
-10. Which recovery accelerators are worth maintaining in addition to source-controlled rebuild automation?
+10. Which optional bootstrap accelerators are worth maintaining in addition to source-controlled rebuild automation?
 11. What data must survive, where is it stored, and how is its recoverability proven?
 12. Can every in-scope node/device be independently reconstructed and validated?
 
 ## Guiding principles
 
+- Failure is expected; unrecoverable configuration drift is not.
+- Rebuildability is preferred over system-backup dependence.
+- Code and documented intent are the primary recovery mechanisms for lab systems.
 - Diagnose from evidence before changing configuration.
 - Prefer supported, declarative, reproducible configuration.
 - Treat implementation repositories as authoritative for their domains.
@@ -297,10 +316,10 @@ Create an evidence-based program model that can answer:
 - Preserve useful human-readable recovery documentation even when the same state is automated.
 - Treat seed/bootstrap procedures as first-class infrastructure dependencies.
 - Separate demonstrated architecture patterns from assumptions that require enterprise-scale validation.
-- Treat images/backups as recovery accelerators, not substitutes for authoritative desired state.
+- Treat optional images/media as bootstrap accelerators, not substitutes for authoritative desired state.
 - Assume in-lab PKI and platform databases can be lost unless a future requirement explicitly changes that boundary.
 - Treat data classification and recoverability as distinct from infrastructure reconstruction.
-- Prefer automated, testable backup flows over undocumented manual copies.
+- Prefer automated, testable data-protection flows over undocumented manual copies.
 - Keep architecture diagrams version-controlled wherever practical.
 
 ## Program role
@@ -319,8 +338,8 @@ This repository is intended to become the control plane for:
 - program roadmap
 - seed/bootstrap documentation
 - personal-data recovery requirements and references
-- Git repository backup requirements
-- recovery-media lifecycle and test requirements
+- Git repository protection requirements
+- optional recovery-media lifecycle and test requirements
 - architecture diagrams
 - reference-architecture documentation and evidence
 
@@ -332,7 +351,7 @@ Operation Desired State will be considered successful when **each in-scope indiv
 
 At the whole-lab level, success means a catastrophic loss can be approached from a newly provisioned Windows management system, authoritative Git repositories, surviving cloud-accessible credentials/information, suitable replacement hardware, an external seed drive, and documented bootstrap procedures, then progressed through a tested recovery runbook until the intended lab is reconstituted.
 
-Existing platform databases and PKI identities do not need to survive if the corresponding service can be cleanly rebuilt and returned to full intended functionality.
+Existing system images, VM backups, platform databases, and PKI identities do not need to survive if the corresponding service can be cleanly rebuilt and returned to full intended functionality.
 
 Personal/irreplaceable data must be recoverable through a separately defined multi-tier backup model. Source repositories must also have N-tier protection so GitHub is not the sole surviving copy.
 
