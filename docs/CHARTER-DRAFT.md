@@ -6,6 +6,21 @@ Operation Desired State exists to turn the RITCSUSA lab from a collection of suc
 
 The program will coordinate existing domain repositories rather than replace them.
 
+## Secondary objective — Reference Architecture
+
+Operation Desired State also serves as a practical reference-architecture proving ground.
+
+The intent is to demonstrate that a small-scale lab can implement disciplined desired-state engineering across networking, virtualization, identity, lifecycle management, automation, endpoint management, security, compliance, backup, validation, and recovery in a way that is credible enough to inform larger enterprise architecture.
+
+The guiding idea is effectively **"if you build it, they will come"**: build and validate the architecture first, then use the working implementation, documentation, dependency model, maturity evidence, and reconstruction exercises as a concrete reference when proposing similar patterns elsewhere.
+
+This does **not** mean the home lab is assumed to map one-for-one onto an enterprise environment. The value is in the architecture patterns, control boundaries, sequencing, validation methods, recovery model, and evidence produced. Enterprise adoption would still require scale, availability, governance, regulatory, organizational, and product-specific analysis.
+
+A successful program should therefore produce artifacts that are useful in two contexts:
+
+1. **RITCSUSA operational recovery and desired-state management**
+2. **A reusable reference architecture and demonstrator for enterprise discussions**
+
 ## Working problem statement
 
 The environment already contains substantial automation across networking, virtualization, identity, lifecycle management, endpoint configuration, security tooling, patching, compliance, and operations. However, the end-state definition, cross-platform dependency model, reconstruction sequence, completeness criteria, and evidence required to declare the environment fully desired-state managed are not yet defined as one program.
@@ -115,6 +130,7 @@ Create an evidence-based program model that can answer:
 6. What evidence proves configuration is convergent and reproducible?
 7. What is required to reconstruct the environment from a defined starting condition?
 8. What criteria must be met before Operation Desired State can be declared complete?
+9. Which architecture patterns are sufficiently validated to serve as a reference model beyond the lab?
 
 ## Guiding principles
 
@@ -134,6 +150,7 @@ Create an evidence-based program model that can answer:
 - Prefer hardware abstraction and capability requirements over unnecessary dependence on exact physical models.
 - Preserve useful human-readable recovery documentation even when the same state is automated.
 - Treat seed/bootstrap procedures as first-class infrastructure dependencies.
+- Separate demonstrated architecture patterns from assumptions that require enterprise-scale validation.
 
 ## Program role
 
@@ -151,6 +168,7 @@ This repository is intended to become the control plane for:
 - program roadmap
 - seed/bootstrap documentation
 - personal-data recovery requirements and references
+- reference-architecture documentation and evidence
 
 It is not intended to become the implementation monorepo.
 
@@ -161,3 +179,5 @@ Operation Desired State will be considered successful when **each in-scope indiv
 At the whole-lab level, success means a catastrophic loss can be approached from a newly provisioned management system, authoritative Git repositories, externalized secrets/trust material, replacement hardware of suitable capability, and documented seed-node procedures, then progressed through the dependency chain until the intended lab is reconstituted.
 
 Personal/irreplaceable data must be recoverable through a separately defined multi-tier backup model; platform database restoration is not required merely to reproduce infrastructure configuration.
+
+As a secondary success measure, the program should leave behind a defensible reference architecture: documented patterns, dependency models, validation evidence, recovery procedures, and lessons learned that can be used to inform enterprise architecture discussions without claiming that the lab itself is an enterprise production design.
