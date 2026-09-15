@@ -82,26 +82,71 @@ The current working sequence after catastrophic loss is:
 8. Provision Red Hat Satellite.
 9. Provision Ansible Automation Platform.
 10. Reprovision Active Directory domain controllers, MECM, Windows Admin Center, and remaining Windows infrastructure using the now-available platform stack and/or validated recovery media where advantageous.
-11. Reconstruct remaining infrastructure, management systems, security services, and workloads according to documented dependencies.
-12. Validate functionality and verify convergence for each restored node/device.
+11. Reconstruct remaining infrastructure, management systems, security services, endpoints, and workloads according to documented dependencies.
+12. Restore NAS configuration and data according to the separate backup/data-classification model.
+13. Validate functionality and verify convergence for each restored node/device.
 
 This sequence is provisional. Dependency analysis may move specific DNS, PKI, identity, imaging, or management functions earlier where evidence shows they are required for bootstrap.
+
+## Scope boundary
+
+The program scope is intentionally broad.
+
+### In scope
+
+All lab devices and managed endpoints are in scope **except the printer as an actively managed recovery target**.
+
+This includes:
+
+- pfSense
+- Cisco switching
+- Hyper-V hosts
+- Windows domain controllers
+- Red Hat IdM
+- Red Hat Satellite
+- Ansible Automation Platform
+- MECM
+- Windows Admin Center
+- Zabbix
+- security and compliance platforms
+- Windows and Linux infrastructure servers
+- user workstation/laptop rebuild to defined desired state
+- physical networking configuration
+- BIOS/UEFI configuration
+- firmware current-state inventory
+- recovery media and bootstrap tooling
+- Synology/NAS configuration recovery where technically practical
+
+### Special case — NAS
+
+The NAS is not treated like an ordinary disposable compute node because it holds recoverable data, but its **configuration should be reproducible or restorable as code/documented state where possible**.
+
+The desired recovery exercise is:
+
+1. back up NAS configuration and data according to policy;
+2. wipe/reinitialize the NAS;
+3. reconstruct NAS configuration;
+4. restore data;
+5. validate permissions, shares, identity integration, and service behavior.
+
+NAS data itself must be classified so it is clear which information:
+
+- must exist in an offsite/cloud tier;
+- should have multiple local copies;
+- can be regenerated or re-downloaded;
+- should not be retained at all.
+
+### Out of scope
+
+- printer recovery as a managed desired-state target
+- preservation of historical platform databases solely for configuration recovery
+- preservation of existing PKI identity solely for continuity
 
 ## Physical infrastructure boundary
 
 Physical infrastructure is in scope.
 
-This includes, at minimum, documenting and where practical automating the desired state for:
-
-- Hyper-V hosts
-- pfSense
-- Cisco switching
-- Synology/NAS infrastructure
-- physical networking
-- firmware/BIOS configuration where it materially affects functionality or security
-- other physical appliances required to reconstitute the lab
-
-If a firewall, switch, or other appliance is destroyed, the intended approach is to replace it with the same model or a better-capability model where practical. Exact hardware identity is not required.
+If a firewall, switch, host, or other appliance is destroyed, the intended approach is to replace it with the same model or a better-capability model where practical. Exact hardware identity is not required.
 
 Where replacement hardware differs materially, AI-assisted migration may be used to translate documented intent to the new platform. The architecture must therefore capture **intent and capability requirements**, not only device-specific CLI syntax.
 
@@ -111,6 +156,23 @@ The desired-state model should capture both:
 2. the **current implementation state** on the presently installed hardware.
 
 Human-readable state documentation is a required recovery artifact even when automation exists.
+
+## BIOS, firmware, and hardware lifecycle policy
+
+BIOS/UEFI settings that materially affect operation or security must be documented and, where tooling permits, managed declaratively.
+
+Firmware should be maintained at the latest appropriate supported revision as an operational objective.
+
+The project should therefore record **current firmware state** for inventory and troubleshooting, but should not treat an old firmware version as a desired-state target merely because it was previously installed.
+
+Recovery documentation should capture:
+
+- current device model and hardware role;
+- current firmware/BIOS versions for inventory;
+- required BIOS/UEFI settings;
+- required hardware capabilities;
+- supported update method;
+- post-update validation expectations.
 
 ## Reconstruction target
 
@@ -132,7 +194,7 @@ PKI continuity is **not** a hard recovery requirement. Existing CA identities, c
 
 Where exact restoration is neither useful nor technically reasonable, the program should define the acceptable functional-equivalence boundary explicitly.
 
-## Data, PKI, and backup boundary
+## Data, PKI, Git, and backup boundary
 
 Routine restoration of platform databases is **not** a primary objective of Operation Desired State.
 
@@ -140,17 +202,65 @@ The preferred model is to rebuild infrastructure platforms from desired state ra
 
 PKI history and continuity are also not considered irreplaceable. A catastrophic rebuild may establish new CA identities and reissue certificates as needed.
 
-Personal and irreplaceable data is different. The program must define or reference an **N-tier backup and recovery strategy for personal/critical data** so that loss of infrastructure does not imply loss of important information.
+Personal and irreplaceable data is different. The program must define an **N-tier backup and recovery strategy for personal/critical data** so that loss of infrastructure does not imply loss of important information.
 
-Cloud-hosted storage such as OneDrive may serve as one tier, but the program should ultimately avoid treating a single cloud location as the only copy of irreplaceable data.
+The same N-tier concept applies to source code and configuration repositories. GitHub is the primary hosted source, but all important repositories should also be copied to additional storage tiers using a reproducible automation workflow, preferably Ansible.
 
-Data classification for recovery should therefore distinguish at least:
+The program should include or reference Ansible-driven workflows for:
 
-- reproducible infrastructure/configuration state
-- cloud-recoverable credentials and account access
-- personal/irreplaceable data requiring multi-tier backup
-- disposable PKI state that may be regenerated
-- operational/history data that may be disposable
+- mirroring/backing up GitHub repositories to one or more secondary local targets;
+- pushing approved backup sets to an offsite/cloud destination;
+- validating backup freshness and recoverability;
+- reporting failures and stale backup tiers.
+
+Cloud-hosted storage such as OneDrive may serve as one tier, but the program should not treat a single cloud location as the only copy of irreplaceable data.
+
+Data classification for recovery should distinguish at least:
+
+- reproducible infrastructure/configuration state;
+- source repositories requiring N-tier backup;
+- cloud-recoverable credentials and account access;
+- personal/irreplaceable data requiring multi-tier backup;
+- regenerable/downloadable data;
+- data that should not be retained;
+- disposable PKI state that may be regenerated;
+- operational/history data that may be disposable.
+
+## Orchestration and runbook objective
+
+Operation Desired State should define a **single recovery flow**, but it does not require an unrealistic literal one-click rebuild.
+
+The target is a tested, version-controlled runbook that:
+
+1. defines dependency order;
+2. identifies manual checkpoints;
+3. links to the authoritative implementation repository/playbook for each stage;
+4. records required inputs and prerequisites;
+5. includes runtime and functional validation;
+6. includes recovery/rollback expectations where relevant;
+7. verifies idempotency/convergence where supported;
+8. can be exercised progressively and periodically;
+9. ultimately demonstrates that every in-scope component can be restored to full functionality, excluding irreplaceable data loss that is handled by the separate backup model.
+
+A future top-level orchestrator may automate increasing portions of this flow, but the tested runbook is the minimum authoritative recovery interface.
+
+## Architecture visualization requirement
+
+The program must maintain a visual representation of the environment and its dependency model.
+
+The initial preferred format is **Mermaid** because it is text-based, version-controlled, reviewable, and easy to keep adjacent to the architecture documentation.
+
+Visio may also be used for presentation-quality or enterprise-facing diagrams where it adds value, but the repository should retain a text-based diagram source whenever practical.
+
+At minimum, the visualization set should eventually include:
+
+- physical/network topology;
+- logical VLAN and routing model;
+- core service dependency graph;
+- catastrophic-recovery/bootstrap sequence;
+- identity/DNS/time/PKI relationships;
+- management/control-plane dependencies;
+- backup/data-flow tiers.
 
 ## Working objective
 
@@ -165,7 +275,9 @@ Create an evidence-based program model that can answer:
 7. What is required to reconstruct the environment from a defined starting condition?
 8. What criteria must be met before Operation Desired State can be declared complete?
 9. Which architecture patterns are sufficiently validated to serve as a reference model beyond the lab?
-10. Which recovery accelerators (for example, standalone images) are worth maintaining in addition to source-controlled rebuild automation?
+10. Which recovery accelerators are worth maintaining in addition to source-controlled rebuild automation?
+11. What data must survive, where is it stored, and how is its recoverability proven?
+12. Can every in-scope node/device be independently reconstructed and validated?
 
 ## Guiding principles
 
@@ -187,6 +299,9 @@ Create an evidence-based program model that can answer:
 - Separate demonstrated architecture patterns from assumptions that require enterprise-scale validation.
 - Treat images/backups as recovery accelerators, not substitutes for authoritative desired state.
 - Assume in-lab PKI and platform databases can be lost unless a future requirement explicitly changes that boundary.
+- Treat data classification and recoverability as distinct from infrastructure reconstruction.
+- Prefer automated, testable backup flows over undocumented manual copies.
+- Keep architecture diagrams version-controlled wherever practical.
 
 ## Program role
 
@@ -204,19 +319,21 @@ This repository is intended to become the control plane for:
 - program roadmap
 - seed/bootstrap documentation
 - personal-data recovery requirements and references
+- Git repository backup requirements
 - recovery-media lifecycle and test requirements
+- architecture diagrams
 - reference-architecture documentation and evidence
 
 It is not intended to become the implementation monorepo.
 
 ## Success statement
 
-Operation Desired State will be considered successful when **each in-scope individual host, node, or device and its intended configuration can be reconstructed from code and documented dependencies to full functionality, with configuration convergence validated and no undocumented critical recovery dependency**.
+Operation Desired State will be considered successful when **each in-scope individual host, node, device, and managed endpoint and its intended configuration can be reconstructed from code and documented dependencies to full functionality, with configuration convergence validated and no undocumented critical recovery dependency**.
 
-At the whole-lab level, success means a catastrophic loss can be approached from a newly provisioned Windows management system, authoritative Git repositories, surviving cloud-accessible credentials/information, suitable replacement hardware, an external seed drive, and documented bootstrap procedures, then progressed through the dependency chain until the intended lab is reconstituted.
+At the whole-lab level, success means a catastrophic loss can be approached from a newly provisioned Windows management system, authoritative Git repositories, surviving cloud-accessible credentials/information, suitable replacement hardware, an external seed drive, and documented bootstrap procedures, then progressed through a tested recovery runbook until the intended lab is reconstituted.
 
 Existing platform databases and PKI identities do not need to survive if the corresponding service can be cleanly rebuilt and returned to full intended functionality.
 
-Personal/irreplaceable data must be recoverable through a separately defined multi-tier backup model.
+Personal/irreplaceable data must be recoverable through a separately defined multi-tier backup model. Source repositories must also have N-tier protection so GitHub is not the sole surviving copy.
 
-As a secondary success measure, the program should leave behind a defensible reference architecture: documented patterns, dependency models, validation evidence, recovery procedures, and lessons learned that can be used to inform enterprise architecture discussions without claiming that the lab itself is an enterprise production design.
+As a secondary success measure, the program should leave behind a defensible reference architecture: documented patterns, diagrams, dependency models, validation evidence, recovery procedures, and lessons learned that can be used to inform enterprise architecture discussions without claiming that the lab itself is an enterprise production design.
