@@ -1,0 +1,328 @@
+# Initial repository inventory for Operation Desired State.
+#
+# IMPORTANT:
+# - Classification is provisional until repo-by-repo assessment is complete.
+# - `role` describes the apparent repository function based on naming and known project context.
+# - `authoritative` remains `unknown` unless already established by evidence.
+# - Supporting, legacy, experimental, and duplicate repositories will be classified later.
+
+repositories:
+  - name: infra-pfsense-desired-state
+    domain: network-edge
+    role: desired-state
+    authoritative: likely
+    notes: pfSense network, firewall, DHCP, DNS Resolver, VPN and recovery work
+
+  - name: infra-hyperv-lifecycle
+    domain: virtualization
+    role: lifecycle
+    authoritative: unknown
+
+  - name: infra-dc-deployment
+    domain: active-directory
+    role: deployment
+    authoritative: unknown
+
+  - name: win-winrm-config
+    domain: windows-management
+    role: configuration
+    authoritative: unknown
+
+  - name: win-ps-scripts
+    domain: windows-operations
+    role: scripts
+    authoritative: unknown
+
+  - name: win-hydration-kit
+    domain: windows-build
+    role: provisioning
+    authoritative: unknown
+
+  - name: infra-redhat-rhel-idm
+    domain: identity
+    role: deployment
+    authoritative: unknown
+
+  - name: infra-idm-config
+    domain: identity
+    role: configuration
+    authoritative: unknown
+
+  - name: infra-satellite-installer
+    domain: satellite
+    role: deployment
+    authoritative: unknown
+
+  - name: infra-satellite-config
+    domain: satellite
+    role: configuration
+    authoritative: unknown
+
+  - name: infra-satellite-maintenance
+    domain: satellite
+    role: operations
+    authoritative: unknown
+
+  - name: infra-satellite-ks
+    domain: satellite
+    role: provisioning-content
+    authoritative: unknown
+
+  - name: infra.satellite_configuration
+    domain: satellite
+    role: configuration
+    authoritative: unknown
+    notes: public repo; relationship to infra-satellite-config requires assessment
+
+  - name: ops-satellite-registration
+    domain: satellite
+    role: operations
+    authoritative: unknown
+
+  - name: aap-installer
+    domain: ansible-automation-platform
+    role: deployment
+    authoritative: unknown
+
+  - name: aap-config-template
+    domain: ansible-automation-platform
+    role: configuration
+    authoritative: unknown
+
+  - name: aap-config-export
+    domain: ansible-automation-platform
+    role: configuration-export
+    authoritative: unknown
+
+  - name: aap-ee-utilities
+    domain: ansible-automation-platform
+    role: execution-environment
+    authoritative: unknown
+
+  - name: aap-inventory-ldap
+    domain: ansible-automation-platform
+    role: inventory
+    authoritative: unknown
+
+  - name: aap-eda-compliance
+    domain: event-driven-automation
+    role: production-automation
+    authoritative: unknown
+
+  - name: aap-eda-compliance-dev
+    domain: event-driven-automation
+    role: development
+    authoritative: no
+
+  - name: aap_eda-compliance-dev
+    domain: event-driven-automation
+    role: development
+    authoritative: unknown
+    notes: similarly named legacy/development repo; classification required
+
+  - name: aap-eda-oscap
+    domain: event-driven-automation
+    role: compliance-integration
+    authoritative: unknown
+
+  - name: aap-eda-servicenow
+    domain: event-driven-automation
+    role: itsm-integration
+    authoritative: unknown
+
+  - name: aap-eda-jira
+    domain: event-driven-automation
+    role: itsm-integration
+    authoritative: unknown
+
+  - name: infra-rhel-base-os
+    domain: rhel
+    role: base-configuration
+    authoritative: unknown
+
+  - name: infra-packer-rhel
+    domain: rhel
+    role: image-build
+    authoritative: unknown
+
+  - name: infra-image-builder
+    domain: rhel
+    role: image-build
+    authoritative: unknown
+
+  - name: infra-image-mode
+    domain: rhel
+    role: image-build
+    authoritative: unknown
+
+  - name: rhis-builder-hyperv-lz
+    domain: rhel
+    role: image-build
+    authoritative: unknown
+
+  - name: rhis-one-click
+    domain: rhel
+    role: orchestration
+    authoritative: unknown
+
+  - name: infra-rhel-insights
+    domain: rhel
+    role: operations
+    authoritative: unknown
+
+  - name: ops-rhel-patch
+    domain: rhel
+    role: patching
+    authoritative: unknown
+
+  - name: sec-rhel-cis-hardening
+    domain: security
+    role: hardening
+    authoritative: unknown
+
+  - name: sec-rhel-grub
+    domain: security
+    role: hardening
+    authoritative: unknown
+
+  - name: ops-oscap-scan
+    domain: security
+    role: compliance-scan
+    authoritative: unknown
+
+  - name: ops-scap-compliance
+    domain: security
+    role: compliance-orchestration
+    authoritative: unknown
+
+  - name: sec-scc-scanner
+    domain: security
+    role: compliance-scan
+    authoritative: unknown
+
+  - name: sec-heimdall-deploy
+    domain: security
+    role: application-deployment
+    authoritative: unknown
+
+  - name: sec-heimdall-mitre
+    domain: security
+    role: compliance-mapping
+    authoritative: unknown
+
+  - name: heimdall-rootless
+    domain: security
+    role: application-deployment
+    authoritative: unknown
+
+  - name: sec-pulsar
+    domain: security
+    role: security-tooling
+    authoritative: unknown
+
+  - name: sec-nessus-deploy
+    domain: security
+    role: scanner-deployment
+    authoritative: unknown
+
+  - name: ops-nessus-scan
+    domain: security
+    role: vulnerability-scan
+    authoritative: unknown
+
+  - name: ops-crowdstrike-deploy
+    domain: security
+    role: endpoint-security
+    authoritative: unknown
+
+  - name: infra-zabbix-deployment
+    domain: monitoring
+    role: deployment
+    authoritative: unknown
+
+  - name: infra-mecm-deployment
+    domain: endpoint-management
+    role: deployment
+    authoritative: unknown
+
+  - name: ops-mecm-operations
+    domain: endpoint-management
+    role: operations
+    authoritative: unknown
+
+  - name: ops-win-patch
+    domain: windows-operations
+    role: patching
+    authoritative: unknown
+
+  - name: ansible-playbooks
+    domain: cross-platform
+    role: general-automation
+    authoritative: unknown
+    notes: older/general-purpose repository requiring scope review
+
+  - name: infra-cockpit-config
+    domain: linux-management
+    role: configuration
+    authoritative: unknown
+
+  - name: ops-uos-deploy
+    domain: endpoint-management
+    role: deployment
+    authoritative: unknown
+
+  - name: grogu-ansible
+    domain: other
+    role: unknown
+    authoritative: unknown
+
+  - name: grogu-docs
+    domain: other
+    role: documentation
+    authoritative: unknown
+
+  - name: grogu-blog
+    domain: other
+    role: documentation
+    authoritative: no
+
+  - name: win-kitty-shell
+    domain: workstation
+    role: tooling
+    authoritative: unknown
+
+  - name: win-kittyshell
+    domain: workstation
+    role: tooling
+    authoritative: unknown
+    notes: similarly named repo; canonical relationship requires assessment
+
+  - name: ops-win-say
+    domain: workstation
+    role: utility
+    authoritative: no
+
+  - name: ops-sat-menu
+    domain: satellite
+    role: utility
+    authoritative: no
+
+  - name: test
+    domain: other
+    role: test
+    authoritative: no
+
+  - name: temp-sat-cac
+    domain: satellite
+    role: temporary
+    authoritative: no
+
+  - name: rathbunr
+    domain: documentation
+    role: github-profile
+    authoritative: no
+
+  - name: Operation-Desired-State
+    domain: program
+    role: control-plane
+    authoritative: yes
