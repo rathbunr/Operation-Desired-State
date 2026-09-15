@@ -31,37 +31,61 @@ The central question is therefore not simply:
 
 It is:
 
-> Can the intended environment be reconstructed and continuously converged from controlled desired-state sources, with dependencies, secrets, validation, recovery, and exceptions explicitly understood?
+> Can the intended environment be reconstructed and continuously converged from controlled desired-state sources, with dependencies, validation, recovery, and exceptions explicitly understood?
 
 ## Defined reconstruction starting condition
 
-For a catastrophic lab loss, the assumed human starting point is a newly provisioned laptop or management workstation with:
+For a catastrophic lab loss, assume **the entire lab may be lost and rebuilt from scratch**.
+
+The human starting point is a newly provisioned Windows workstation/laptop with:
 
 - Internet access
+- Microsoft Edge profile access sufficient to recover the user's surviving cloud-stored credentials
 - access to the authoritative Git repositories
-- access to required external secrets, credentials, licenses, subscriptions, and trust material
-- replacement hardware that may differ from the original hardware
+- access to cloud-hosted personal/critical information such as OneDrive or an equivalent service
+- suitable replacement hardware, which may differ from the original hardware
+- an external drive that can be used for seed/bootstrap media and image staging
+
+No in-lab password store, platform database, or PKI state is assumed to survive.
 
 Operation Desired State must therefore be reasonably hardware-agnostic where practical. Hardware-specific configuration may still exist, but the reconstruction model must distinguish required capabilities from assumptions about exact replacement models.
 
-A documented **seed node procedure** is a critical program artifact. The seed node exists to bootstrap the first managed infrastructure node before the normal management stack is available.
+## Seed and bootstrap model
+
+The initial seed node is the user's Windows workstation/laptop with an external drive.
+
+This workstation is expected to provide the first recovery control point before normal lab management services exist.
+
+In addition to Git-based desired-state recovery, the program should evaluate maintaining a periodically refreshed **standalone Windows recovery media set** capable of accelerating bootstrap. Candidate seed artifacts include:
+
+- DC-01 image
+- DC-02 image
+- MECM image
+- Windows Admin Center image
+- a known-good Windows workstation/laptop image
+
+These artifacts are accelerators, not the sole authoritative recovery mechanism. They should be treated as periodically refreshed recovery media, likely on an annual cadence or another defined interval, and tested in isolation sufficiently to establish that they remain bootable and useful.
+
+The authoritative long-term configuration source remains version-controlled desired state and documentation, not stale images.
 
 ## Provisional greenfield reconstruction sequence
 
 The current working sequence after catastrophic loss is:
 
-1. Provision a management laptop/workstation and obtain Git/secrets access.
-2. Build the seed node using explicit bootstrap instructions.
-3. Use the seed node to image/provision the first Hyper-V host.
-4. Restore or rebuild foundational network services, including pfSense and required switching configuration, at the point necessary to establish stable infrastructure networking.
-5. Provision Red Hat IdM.
-6. Provision Red Hat Satellite.
-7. Provision Ansible Automation Platform.
-8. With core automation/identity/content-management services available, reprovision Active Directory domain controllers and MECM.
-9. Reconstruct remaining infrastructure, management systems, security services, and workloads according to documented dependencies.
-10. Validate functionality and verify convergence for each restored node/device.
+1. Provision a Windows management workstation/laptop.
+2. Recover access to Git and cloud-hosted critical information.
+3. Prepare seed/bootstrap media from the workstation and external drive.
+4. Restore or replace foundational network hardware, using like-for-like or better-capability devices where practical.
+5. Reconstitute pfSense and switching sufficiently to establish stable infrastructure networking.
+6. Provision the first Hyper-V host from the seed environment.
+7. Provision Red Hat IdM.
+8. Provision Red Hat Satellite.
+9. Provision Ansible Automation Platform.
+10. Reprovision Active Directory domain controllers, MECM, Windows Admin Center, and remaining Windows infrastructure using the now-available platform stack and/or validated recovery media where advantageous.
+11. Reconstruct remaining infrastructure, management systems, security services, and workloads according to documented dependencies.
+12. Validate functionality and verify convergence for each restored node/device.
 
-This sequence is provisional. Dependency analysis may move pfSense, switching, DNS, PKI, AD, or other services earlier where evidence shows they are required to bootstrap IdM, Satellite, AAP, or the first Hyper-V workload layer.
+This sequence is provisional. Dependency analysis may move specific DNS, PKI, identity, imaging, or management functions earlier where evidence shows they are required for bootstrap.
 
 ## Physical infrastructure boundary
 
@@ -77,7 +101,11 @@ This includes, at minimum, documenting and where practical automating the desire
 - firmware/BIOS configuration where it materially affects functionality or security
 - other physical appliances required to reconstitute the lab
 
-Because replacement hardware may differ after a catastrophic event, the desired-state model should capture both:
+If a firewall, switch, or other appliance is destroyed, the intended approach is to replace it with the same model or a better-capability model where practical. Exact hardware identity is not required.
+
+Where replacement hardware differs materially, AI-assisted migration may be used to translate documented intent to the new platform. The architecture must therefore capture **intent and capability requirements**, not only device-specific CLI syntax.
+
+The desired-state model should capture both:
 
 1. the **capability requirement** (for example, NIC count/speed, virtualization features, storage, VLAN/trunk support), and
 2. the **current implementation state** on the presently installed hardware.
@@ -88,7 +116,7 @@ Human-readable state documentation is a required recovery artifact even when aut
 
 The preferred recovery target is the current intended lab state as closely as practical.
 
-Exact hardware identity is not required when equivalent replacement hardware is necessary. However, stable logical identities and architecture should be preserved where appropriate, including:
+Exact hardware identity is not required when equivalent replacement hardware is necessary. Stable logical identities and architecture should be preserved where useful, including:
 
 - hostnames
 - DNS names
@@ -99,23 +127,29 @@ Exact hardware identity is not required when equivalent replacement hardware is 
 - policy
 - trust relationships
 - security controls
-- required certificates/trust anchors
+
+PKI continuity is **not** a hard recovery requirement. Existing CA identities, certificate databases, and historical certificate state may be lost and regenerated if rebuilding the environment cleanly is simpler and safer.
 
 Where exact restoration is neither useful nor technically reasonable, the program should define the acceptable functional-equivalence boundary explicitly.
 
-## Data and backup boundary
+## Data, PKI, and backup boundary
 
 Routine restoration of platform databases is **not** a primary objective of Operation Desired State.
 
 The preferred model is to rebuild infrastructure platforms from desired state rather than depend on database-level restoration merely to recover configuration.
 
-Personal and irreplaceable data is different. The program must define or reference an **N-tier backup and recovery strategy for personal data** so that loss of infrastructure does not imply loss of personal information.
+PKI history and continuity are also not considered irreplaceable. A catastrophic rebuild may establish new CA identities and reissue certificates as needed.
+
+Personal and irreplaceable data is different. The program must define or reference an **N-tier backup and recovery strategy for personal/critical data** so that loss of infrastructure does not imply loss of important information.
+
+Cloud-hosted storage such as OneDrive may serve as one tier, but the program should ultimately avoid treating a single cloud location as the only copy of irreplaceable data.
 
 Data classification for recovery should therefore distinguish at least:
 
 - reproducible infrastructure/configuration state
-- trust anchors and secrets that must survive or be securely recoverable
+- cloud-recoverable credentials and account access
 - personal/irreplaceable data requiring multi-tier backup
+- disposable PKI state that may be regenerated
 - operational/history data that may be disposable
 
 ## Working objective
@@ -131,6 +165,7 @@ Create an evidence-based program model that can answer:
 7. What is required to reconstruct the environment from a defined starting condition?
 8. What criteria must be met before Operation Desired State can be declared complete?
 9. Which architecture patterns are sufficiently validated to serve as a reference model beyond the lab?
+10. Which recovery accelerators (for example, standalone images) are worth maintaining in addition to source-controlled rebuild automation?
 
 ## Guiding principles
 
@@ -144,13 +179,14 @@ Create an evidence-based program model that can answer:
 - Verify idempotency/convergence when tooling supports it.
 - Establish rollback or recovery proportional to the scenario and risk.
 - For greenfield/disposable rebuild scenarios, prefer recoverability over preserving disposable state.
-- Externalize secrets from repositories.
 - Document unsupported gaps and intentional exceptions explicitly.
 - Treat complete reconstruction as a system dependency problem, not merely a collection of independent playbooks.
 - Prefer hardware abstraction and capability requirements over unnecessary dependence on exact physical models.
 - Preserve useful human-readable recovery documentation even when the same state is automated.
 - Treat seed/bootstrap procedures as first-class infrastructure dependencies.
 - Separate demonstrated architecture patterns from assumptions that require enterprise-scale validation.
+- Treat images/backups as recovery accelerators, not substitutes for authoritative desired state.
+- Assume in-lab PKI and platform databases can be lost unless a future requirement explicitly changes that boundary.
 
 ## Program role
 
@@ -168,6 +204,7 @@ This repository is intended to become the control plane for:
 - program roadmap
 - seed/bootstrap documentation
 - personal-data recovery requirements and references
+- recovery-media lifecycle and test requirements
 - reference-architecture documentation and evidence
 
 It is not intended to become the implementation monorepo.
@@ -176,8 +213,10 @@ It is not intended to become the implementation monorepo.
 
 Operation Desired State will be considered successful when **each in-scope individual host, node, or device and its intended configuration can be reconstructed from code and documented dependencies to full functionality, with configuration convergence validated and no undocumented critical recovery dependency**.
 
-At the whole-lab level, success means a catastrophic loss can be approached from a newly provisioned management system, authoritative Git repositories, externalized secrets/trust material, replacement hardware of suitable capability, and documented seed-node procedures, then progressed through the dependency chain until the intended lab is reconstituted.
+At the whole-lab level, success means a catastrophic loss can be approached from a newly provisioned Windows management system, authoritative Git repositories, surviving cloud-accessible credentials/information, suitable replacement hardware, an external seed drive, and documented bootstrap procedures, then progressed through the dependency chain until the intended lab is reconstituted.
 
-Personal/irreplaceable data must be recoverable through a separately defined multi-tier backup model; platform database restoration is not required merely to reproduce infrastructure configuration.
+Existing platform databases and PKI identities do not need to survive if the corresponding service can be cleanly rebuilt and returned to full intended functionality.
+
+Personal/irreplaceable data must be recoverable through a separately defined multi-tier backup model.
 
 As a secondary success measure, the program should leave behind a defensible reference architecture: documented patterns, dependency models, validation evidence, recovery procedures, and lessons learned that can be used to inform enterprise architecture discussions without claiming that the lab itself is an enterprise production design.
