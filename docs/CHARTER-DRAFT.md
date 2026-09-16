@@ -2,11 +2,106 @@
 
 ## Purpose
 
-Operation Desired State exists to turn the RITCSUSA lab from a collection of successfully automated systems into a deliberately defined, reproducible, recoverable, and continuously convergent infrastructure program.
+Operation Desired State exists to define a technology-agnostic architecture for reconstructing, validating, and continuously converging infrastructure toward an explicitly declared desired state.
 
-The program will coordinate existing domain repositories rather than replace them.
+The charter defines the enduring vision, activity model, control objectives, architectural constraints, interface contracts, evidence expectations, and convergence requirements. Technology is selected to implement that architecture; technology does not define the architecture.
 
-The lab is intentionally a **bleeding-edge learning environment**. Failure is expected. Preserving running systems is not the objective; proving that they can be reconstructed from code, documented intent, and a minimal external control plane is.
+The RITCSUSA lab is the initial proving ground for this model. It is intentionally a **bleeding-edge learning environment**. Failure is expected. Preserving running systems is not the objective; proving that systems and services can be reconstructed from controlled intent, implementation repositories, documented dependencies, and a minimal external control plane is.
+
+Operation Desired State coordinates implementation domains rather than replacing them. Domain repositories remain authoritative for their implementation activities.
+
+## Architectural hierarchy
+
+Operation Desired State uses three distinct layers.
+
+### 1. Architecture charter
+
+The charter defines:
+
+- the desired-state vision;
+- activity boundaries;
+- required outcomes;
+- capability requirements;
+- control objectives;
+- cross-activity contracts;
+- validation and evidence requirements;
+- convergence expectations;
+- recovery and reconstruction principles.
+
+The charter should remain technology-agnostic wherever practical. It should describe **what must be true and what must be proven**, not mandate a product merely because that product is used in the current lab.
+
+### 2. Validated reference designs
+
+Reference designs translate charter requirements into concrete technology implementations.
+
+A reference design is not merely an example architecture or product diagram. It is a **validated implementation pattern** that demonstrates, with retained evidence, that a selected technology stack can satisfy applicable charter requirements.
+
+Each reference design must identify:
+
+1. the charter requirements it implements;
+2. the design decisions used to satisfy those requirements;
+3. the implementation repositories or components that realize the design;
+4. the validation methods used to test the design;
+5. the retained evidence supporting the result;
+6. known limitations, exceptions, and unproven assumptions;
+7. the current validation state of each material requirement.
+
+Reference designs may change as technology changes. The charter should change only when the architectural intent changes.
+
+### 3. Implementation repositories
+
+Implementation repositories contain the product- or platform-specific automation used to perform individual activities.
+
+Repositories should align to activities and contracts rather than being combined simply because products participate in the same end-to-end workflow.
+
+Examples include image construction, virtualization deployment, identity establishment, lifecycle management, configuration convergence, compliance validation, data protection, and monitoring.
+
+Implementation repositories consume and produce explicit contracts. They should not require upstream architecture repositories to embed their implementation details.
+
+## Reference-design conformance model
+
+The expected traceability chain is:
+
+```text
+Charter Requirement
+        |
+        v
+Reference Design Decision
+        |
+        v
+Implementation Activity / Repository
+        |
+        v
+Validation Method
+        |
+        v
+Retained Evidence
+        |
+        v
+Validation State
+```
+
+A reference design should use explicit validation states such as:
+
+- Proven
+- Partially Proven
+- Failed
+- Not Yet Validated
+- Exception Accepted
+
+A successful automation run alone is not proof of architectural conformance. Evidence must demonstrate that the implemented behavior satisfies the applicable charter requirement.
+
+An implementation is considered conformant only when the associated reference design demonstrates that the applicable charter requirements are satisfied with retained validation evidence.
+
+## Technology substitution principle
+
+Technology is an implementation choice beneath the charter.
+
+For example, the charter may require that a validated compute artifact be instantiated by an infrastructure-deployment activity while preserving artifact integrity and declared runtime requirements. One reference design may realize that requirement with Hyper-V; another may use VMware or another virtualization platform.
+
+The architectural requirement remains stable while the implementation can change.
+
+The same principle applies to identity, lifecycle management, orchestration, compliance, networking, storage, and other capabilities.
 
 ## Secondary objective — Reference Architecture
 
@@ -14,14 +109,16 @@ Operation Desired State also serves as a practical reference-architecture provin
 
 The intent is to demonstrate that a small-scale lab can implement disciplined desired-state engineering across networking, virtualization, identity, lifecycle management, automation, endpoint management, security, compliance, validation, recovery, and data protection in a way that is credible enough to inform larger enterprise architecture.
 
-The guiding idea is effectively **"if you build it, they will come"**: build and validate the architecture first, then use the working implementation, documentation, dependency model, maturity evidence, and reconstruction exercises as a concrete reference when proposing similar patterns elsewhere.
+The RITCSUSA implementation is therefore a validated reference design beneath the higher-level charter, not the charter itself.
+
+The guiding idea is effectively **"if you build it, they will come"**: define the architecture, implement it through bounded activities, validate those activities and their contracts, then use the working implementation, documentation, dependency model, maturity evidence, and reconstruction exercises as a concrete reference when proposing similar patterns elsewhere.
 
 This does **not** mean the home lab is assumed to map one-for-one onto an enterprise environment. The value is in the architecture patterns, control boundaries, sequencing, validation methods, recovery model, and evidence produced. Enterprise adoption would still require scale, availability, governance, regulatory, organizational, and product-specific analysis.
 
 A successful program should therefore produce artifacts that are useful in two contexts:
 
 1. **RITCSUSA operational recovery and desired-state management**
-2. **A reusable reference architecture and demonstrator for enterprise discussions**
+2. **Reusable validated reference designs for enterprise architecture discussions**
 
 ## Working problem statement
 
@@ -79,14 +176,16 @@ The current working sequence after catastrophic loss is:
 3. Prepare any useful seed/bootstrap media from the workstation and external drive.
 4. Restore or replace foundational network hardware, using like-for-like or better-capability devices where practical.
 5. Reconstitute pfSense and switching sufficiently to establish stable infrastructure networking.
-6. Provision the first Hyper-V host from the seed environment.
-7. Provision Red Hat IdM.
-8. Provision Red Hat Satellite.
-9. Provision Ansible Automation Platform.
-10. Reprovision Active Directory domain controllers, MECM, Windows Admin Center, and remaining Windows infrastructure using desired-state automation and/or optional bootstrap media where advantageous.
+6. Provision the first virtualization host from the seed environment.
+7. Provision the primary Linux identity capability.
+8. Provision the Linux lifecycle/content-management capability.
+9. Provision the primary automation/orchestration capability.
+10. Reprovision Active Directory domain controllers, endpoint-management services, Windows administration services, and remaining Windows infrastructure using desired-state automation and/or optional bootstrap media where advantageous.
 11. Reconstruct remaining infrastructure, management systems, security services, endpoints, and workloads according to documented dependencies.
 12. Restore NAS configuration and data according to the separate backup/data-classification model.
 13. Validate functionality and verify convergence for each restored node/device.
+
+The associated RITCSUSA reference design maps these capability-level activities to the currently selected technologies and repositories.
 
 This sequence is provisional. Dependency analysis may move specific DNS, PKI, identity, imaging, or management functions earlier where evidence shows they are required for bootstrap.
 
@@ -100,16 +199,16 @@ All lab devices and managed endpoints are in scope **except the printer as an ac
 
 This includes:
 
-- pfSense
-- Cisco switching
-- Hyper-V hosts
+- firewall/routing platforms
+- switching
+- virtualization hosts
 - Windows domain controllers
-- Red Hat IdM
-- Red Hat Satellite
-- Ansible Automation Platform
-- MECM
-- Windows Admin Center
-- Zabbix
+- Linux identity services
+- Linux lifecycle/content-management services
+- automation/orchestration services
+- endpoint-management services
+- Windows administration services
+- monitoring
 - security and compliance platforms
 - Windows and Linux infrastructure servers
 - user workstation/laptop rebuild to defined desired state
@@ -117,7 +216,9 @@ This includes:
 - BIOS/UEFI configuration
 - firmware current-state inventory
 - seed/bootstrap tooling
-- Synology/NAS configuration recovery where technically practical
+- NAS configuration recovery where technically practical
+
+Specific products belong in reference designs and implementation repositories rather than being treated as architectural requirements unless a product-specific constraint is itself part of a defined reference design.
 
 ### Special case — NAS
 
@@ -244,13 +345,13 @@ Cloud-hosted storage such as OneDrive may serve as one tier, but the program sho
 
 ## Orchestration and runbook objective
 
-Operation Desired State should define a **single recovery flow**, but it does not require an unrealistic literal one-click rebuild.
+Operation Desired State should define a **single recovery flow and activity dependency model**, but it does not itself need to be the orchestration engine and does not require an unrealistic literal one-click rebuild.
 
 The target is a tested, version-controlled runbook that:
 
 1. defines dependency order;
 2. identifies manual checkpoints;
-3. links to the authoritative implementation repository/playbook for each stage;
+3. links to the authoritative implementation repository/playbook for each activity;
 4. records required inputs and prerequisites;
 5. includes runtime and functional validation;
 6. includes recovery/rollback expectations where relevant;
@@ -258,7 +359,7 @@ The target is a tested, version-controlled runbook that:
 8. can be exercised progressively and periodically;
 9. ultimately demonstrates that every in-scope component can be reconstructed to full functionality, excluding irreplaceable data handled by the separate backup model.
 
-A future top-level orchestrator may automate increasing portions of this flow, but the tested runbook is the minimum authoritative recovery interface.
+A selected automation platform may orchestrate increasing portions of this flow. The architecture defines the workflow requirements and contracts; the automation technology is a reference-design implementation choice.
 
 ## Architecture visualization requirement
 
@@ -270,6 +371,8 @@ Visio may also be used for presentation-quality or enterprise-facing diagrams wh
 
 At minimum, the visualization set should eventually include:
 
+- activity and contract model;
+- reference-design mappings;
 - physical/network topology;
 - logical VLAN and routing model;
 - core service dependency graph;
@@ -282,27 +385,34 @@ At minimum, the visualization set should eventually include:
 
 Create an evidence-based program model that can answer:
 
-1. What systems and capabilities are in scope?
-2. Which repository is authoritative for each capability?
-3. What dependencies exist between platforms and repositories?
-4. What manual or out-of-band steps still exist?
-5. What validation proves a component is functioning as intended?
-6. What evidence proves configuration is convergent and reproducible?
-7. What is required to reconstruct the environment from a defined starting condition?
-8. What criteria must be met before Operation Desired State can be declared complete?
-9. Which architecture patterns are sufficiently validated to serve as a reference model beyond the lab?
-10. Which optional bootstrap accelerators are worth maintaining in addition to source-controlled rebuild automation?
-11. What data must survive, where is it stored, and how is its recoverability proven?
-12. Can every in-scope node/device be independently reconstructed and validated?
+1. What capabilities and activities are in scope?
+2. What charter requirements apply to each activity?
+3. Which validated reference designs implement those requirements?
+4. Which repository is authoritative for each implementation activity?
+5. What dependencies and contracts exist between activities and repositories?
+6. What manual or out-of-band steps still exist?
+7. What validation proves a component is functioning as intended?
+8. What evidence proves configuration is convergent and reproducible?
+9. What is required to reconstruct the environment from a defined starting condition?
+10. What criteria must be met before Operation Desired State can be declared complete?
+11. Which architecture patterns are sufficiently validated to serve as a reference model beyond the lab?
+12. Which optional bootstrap accelerators are worth maintaining in addition to source-controlled rebuild automation?
+13. What data must survive, where is it stored, and how is its recoverability proven?
+14. Can every in-scope node/device be independently reconstructed and validated?
 
 ## Guiding principles
 
+- Technology implements the architecture; technology does not define the architecture.
+- The charter defines intent, outcomes, activities, contracts, controls, validation, and evidence requirements at a technology-agnostic level wherever practical.
+- Reference designs map charter requirements to concrete technology implementations and must be validated with retained evidence.
+- Reference designs may evolve as technology changes without requiring the charter to change unless architectural intent changes.
+- Repositories should align to activities and contracts, not be combined merely because products participate in the same workflow.
+- Implementation repositories remain authoritative for their implementation domains.
 - Failure is expected; unrecoverable configuration drift is not.
 - Rebuildability is preferred over system-backup dependence.
 - Code and documented intent are the primary recovery mechanisms for lab systems.
 - Diagnose from evidence before changing configuration.
 - Prefer supported, declarative, reproducible configuration.
-- Treat implementation repositories as authoritative for their domains.
 - Do not duplicate implementation code into this program repository.
 - Use dry-run, check, diff, or plan workflows where available.
 - Validate runtime state after change.
@@ -324,12 +434,15 @@ Create an evidence-based program model that can answer:
 
 ## Program role
 
-This repository is intended to become the control plane for:
+This repository is intended to become the architectural and evidence control plane for:
 
-- architecture and scope
+- architecture charter and scope
+- activity model and capability requirements
+- validated reference designs
+- charter-to-design-to-implementation traceability
 - repository catalog
 - authoritative ownership mapping
-- dependency graph
+- dependency and contract graph
 - maturity assessment
 - cross-repository validation standards
 - reconstruction sequencing
@@ -341,18 +454,18 @@ This repository is intended to become the control plane for:
 - Git repository protection requirements
 - optional recovery-media lifecycle and test requirements
 - architecture diagrams
-- reference-architecture documentation and evidence
+- reference-design documentation and evidence
 
-It is not intended to become the implementation monorepo.
+It is not intended to become the implementation monorepo or the mandatory orchestration engine.
 
 ## Success statement
 
-Operation Desired State will be considered successful when **each in-scope individual host, node, device, and managed endpoint and its intended configuration can be reconstructed from code and documented dependencies to full functionality, with configuration convergence validated and no undocumented critical recovery dependency**.
+Operation Desired State will be considered successful when **each in-scope individual host, node, device, managed endpoint, and required capability can be reconstructed from controlled intent and authoritative implementation sources to full functionality, with configuration convergence validated and no undocumented critical recovery dependency**.
 
-At the whole-lab level, success means a catastrophic loss can be approached from a newly provisioned Windows management system, authoritative Git repositories, surviving cloud-accessible credentials/information, suitable replacement hardware, an external seed drive, and documented bootstrap procedures, then progressed through a tested recovery runbook until the intended lab is reconstituted.
+At the whole-lab level, success means a catastrophic loss can be approached from a newly provisioned management system, authoritative Git repositories, surviving cloud-accessible credentials/information, suitable replacement hardware, external seed media where useful, and documented bootstrap procedures, then progressed through a tested recovery runbook until the intended lab is reconstituted.
 
 Existing system images, VM backups, platform databases, and PKI identities do not need to survive if the corresponding service can be cleanly rebuilt and returned to full intended functionality.
 
 Personal/irreplaceable data must be recoverable through a separately defined multi-tier backup model. Source repositories must also have N-tier protection so GitHub is not the sole surviving copy.
 
-As a secondary success measure, the program should leave behind a defensible reference architecture: documented patterns, diagrams, dependency models, validation evidence, recovery procedures, and lessons learned that can be used to inform enterprise architecture discussions without claiming that the lab itself is an enterprise production design.
+As a secondary success measure, the program should leave behind defensible validated reference designs: documented patterns, design decisions, diagrams, dependency models, implementation mappings, validation evidence, recovery procedures, and lessons learned that can be used to inform enterprise architecture discussions without claiming that the lab itself is an enterprise production design.
