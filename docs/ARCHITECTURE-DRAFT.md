@@ -1,8 +1,71 @@
 # Operation Desired State — Architecture Draft
 
-This document captures the initial whole-lab recovery/control-plane architecture. It is intentionally high level and will be refined as repository ownership and dependencies are assessed.
+This document captures the initial whole-lab recovery architecture and the relationship between the ODS charter, validated reference designs, and implementation repositories. It is intentionally high level and will be refined as activity ownership, contracts, and dependencies are assessed.
+
+## Architecture layers
+
+```mermaid
+flowchart TD
+    C[ODS Architecture Charter<br/>Vision, activities, outcomes, contracts,<br/>controls, validation, evidence] --> R[Validated Reference Designs<br/>Technology realization + traceability + proof]
+    R --> I1[Implementation Activity / Repository A]
+    R --> I2[Implementation Activity / Repository B]
+    R --> I3[Implementation Activity / Repository N]
+
+    I1 --> E[Retained Validation Evidence]
+    I2 --> E
+    I3 --> E
+    E --> R
+
+    T1[Technology Choice 1] --> I1
+    T2[Technology Choice 2] --> I2
+    T3[Technology Choice N] --> I3
+```
+
+The charter defines architectural intent. Reference designs prove concrete implementation patterns. Implementation repositories perform bounded activities and exchange explicit contracts.
+
+Technology may be replaced beneath a reference design or by creating a new reference design without changing the charter unless the architectural intent itself changes.
+
+## Activity and contract principle
+
+ODS decomposes end-to-end outcomes into activities with explicit producer/consumer boundaries.
+
+For example:
+
+```text
+Artifact Production Activity
+        |
+        | validated artifact + provenance contract
+        v
+Infrastructure Deployment Activity
+        |
+        | instantiated compute + runtime identity
+        v
+Configuration / Service Establishment Activity
+        |
+        | validated functional state
+        v
+Continuous Convergence / Compliance Activity
+```
+
+A product does not own an architectural activity merely because it participates in the current implementation. The reference design maps each activity to the selected technology and implementation repository.
+
+## Reference-design validation loop
+
+```mermaid
+flowchart LR
+    CR[Charter Requirement] --> DD[Design Decision]
+    DD --> IR[Implementation Repository]
+    IR --> VM[Validation Method]
+    VM --> EV[Retained Evidence]
+    EV --> VS[Validation State]
+    VS --> DD
+```
+
+A successful implementation run does not, by itself, establish architectural conformance. Validation evidence must prove the applicable requirement.
 
 ## Catastrophic recovery control flow
+
+The following is the current RITCSUSA reference-design realization of the higher-level recovery activity model.
 
 ```mermaid
 flowchart TD
@@ -10,16 +73,16 @@ flowchart TD
     B --> C[Access GitHub and critical cloud data]
     C --> D[Prepare external seed drive / recovery media]
     D --> E[Restore or replace network hardware]
-    E --> F[Reconstitute pfSense]
-    E --> G[Reconstitute Cisco switching]
+    E --> F[Reconstitute firewall/routing capability]
+    E --> G[Reconstitute switching capability]
     F --> H[Stable routed infrastructure network]
     G --> H
-    H --> I[Provision first Hyper-V host]
-    I --> J[Provision Red Hat IdM]
-    J --> K[Provision Red Hat Satellite]
-    K --> L[Provision Ansible Automation Platform]
+    H --> I[Provision first virtualization host]
+    I --> J[Provision Linux identity capability]
+    J --> K[Provision Linux lifecycle/content capability]
+    K --> L[Provision automation/orchestration capability]
     L --> M[Rebuild AD domain controllers]
-    L --> N[Rebuild MECM / Windows management]
+    L --> N[Rebuild Windows management capability]
     M --> O[Rebuild remaining Windows infrastructure]
     J --> P[Rebuild Linux infrastructure]
     K --> P
@@ -27,11 +90,13 @@ flowchart TD
     O --> Q[Rebuild remaining services / workloads]
     P --> Q
     Q --> R[Restore NAS configuration]
-    R --> S[Restore classified NAS data]
+    R --> S[Restore protected NAS data]
     S --> T[Runtime + functional validation]
     T --> U[Verify idempotency / convergence]
     U --> V[Recovery complete]
 ```
+
+The associated reference design maps these capabilities to the currently selected RITCSUSA technologies. Those product choices are implementation decisions, not charter-level architectural mandates.
 
 ## Backup/control-plane concept
 
@@ -50,7 +115,7 @@ flowchart LR
     GH[GitHub repositories] --> MIRROR[Automated local mirror]
     MIRROR --> OFFSITE[Automated frequent offsite backup]
 
-    NAS[NAS classified data] --> LOCAL[Local backup]
+    NAS[NAS protected data] --> LOCAL[Local backup]
     NAS --> CLOUD[Automated frequent offsite / cloud backup]
 
     CFG[Desired-state code + documentation] --> GH
@@ -79,6 +144,11 @@ The same automation-first expectation applies to approved NAS data classes that 
 
 ## Architectural principles
 
+- Technology implements the architecture; technology does not define the architecture.
+- The charter defines intent, capabilities, activities, contracts, controls, validation, and evidence requirements.
+- Validated reference designs map those requirements to technology-specific implementations.
+- Implementation repositories remain authoritative for implementation details.
+- Cross-activity integration should occur through explicit contracts rather than unnecessary repository coupling.
 - Git and documentation are authoritative for reproducible configuration.
 - Recovery images accelerate bootstrap but do not replace desired-state sources.
 - Hardware replacement may be like-for-like or better; capability intent is more important than exact model identity.
@@ -91,6 +161,9 @@ The same automation-first expectation applies to approved NAS data classes that 
 
 ## Required future diagrams
 
+- charter-to-reference-design traceability
+- activity and contract model
+- reference-design implementation mappings
 - physical topology
 - VLAN/routing topology
 - service dependency graph
